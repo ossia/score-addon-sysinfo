@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <iterator>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -25,12 +26,14 @@
 #include <iphlpapi.h>
 // clang-format on
 #else
+#include <sys/resource.h>
 #include <sys/statvfs.h>
 #include <unistd.h>
 #endif
 
 #if defined(__APPLE__)
 #include <ifaddrs.h>
+#include <libproc.h>
 #include <net/if.h>
 #include <sys/sysctl.h>
 #include <sys/time.h>
@@ -178,6 +181,57 @@ double uptime()
 #else
   return 0.;
 #endif
+}
+
+file_handles open_files()
+{
+  file_handles res;
+
+#if defined(_WIN32)
+  DWORD handles{};
+  if(GetProcessHandleCount(GetCurrentProcess(), &handles))
+    res.process_open = handles;
+#else
+  struct rlimit lim
+  {
+  };
+  if(::getrlimit(RLIMIT_NOFILE, &lim) == 0 && lim.rlim_cur != RLIM_INFINITY)
+    res.process_max = lim.rlim_cur;
+#endif
+
+#if defined(__linux__)
+  std::error_code ec;
+  const auto n = std::distance(
+      std::filesystem::directory_iterator{"/proc/self/fd", ec},
+      std::filesystem::directory_iterator{});
+  // The iterator holds one of the descriptors it is listing
+  res.process_open = n > 0 ? n - 1 : 0;
+
+  // "allocated  free  max", where free has been 0 since Linux 2.6
+  std::ifstream f{"/proc/sys/fs/file-nr"};
+  std::uint64_t allocated{}, unused{}, max{};
+  if(f >> allocated >> unused >> max)
+  {
+    res.system_open = allocated - std::min(allocated, unused);
+    res.system_max = max;
+  }
+#elif defined(__APPLE__)
+  const int bytes = ::proc_pidinfo(::getpid(), PROC_PIDLISTFDS, 0, nullptr, 0);
+  if(bytes > 0)
+    res.process_open = std::uint64_t(bytes) / sizeof(struct proc_fdinfo);
+
+  auto sysctl_uint = [](const char* name) -> std::uint64_t {
+    int value{};
+    std::size_t len = sizeof(value);
+    if(::sysctlbyname(name, &value, &len, nullptr, 0) == 0 && value > 0)
+      return std::uint64_t(value);
+    return 0;
+  };
+  res.system_open = sysctl_uint("kern.num_files");
+  res.system_max = sysctl_uint("kern.maxfiles");
+#endif
+
+  return res;
 }
 
 std::unordered_map<std::string, network_counters> network_traffic()

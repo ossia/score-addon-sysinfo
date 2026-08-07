@@ -42,6 +42,21 @@ load_average loadavg();
 //! Seconds since boot, 0 if unknown
 double uptime();
 
+struct file_handles
+{
+  //! Descriptors held by score itself. On Windows this counts every kernel
+  //! handle, not only files: there is no narrower equivalent.
+  std::uint64_t process_open{};
+  //! Soft limit for this process, 0 where the platform imposes none
+  std::uint64_t process_max{};
+
+  //! Machine-wide, 0 on Windows which does not report it
+  std::uint64_t system_open{};
+  std::uint64_t system_max{};
+};
+
+file_handles open_files();
+
 struct network_counters
 {
   std::uint64_t rx{};

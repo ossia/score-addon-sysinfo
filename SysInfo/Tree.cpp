@@ -19,6 +19,7 @@
 #include <QStyle>
 
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -160,6 +161,13 @@ ossia::value floats(const std::vector<float>& v)
 std::string idx(std::string_view prefix, std::size_t i, std::string_view suffix)
 {
   return std::string(prefix) + std::to_string(i) + std::string(suffix);
+}
+
+//! ossia integers are 32-bit, and a "no limit" value such as the int64 maximum
+//! that Linux reports for fs.file-max would wrap around
+ossia::value count(std::uint64_t v) noexcept
+{
+  return int(std::min<std::uint64_t>(v, std::numeric_limits<int>::max()));
 }
 
 float usage_of(std::uint64_t total, std::uint64_t free) noexcept
@@ -346,6 +354,7 @@ snapshot sampler::fetch(const hardware& hw, std::chrono::milliseconds cpu_window
   }
 
   s.load = platform::loadavg();
+  s.files = platform::open_files();
   s.uptime = platform::uptime();
 
   return s;
@@ -391,6 +400,20 @@ void tree::setup(
   m_load_15 = addr(
       root, "/load/15m", ossia::val_type::FLOAT,
       "System load averaged over fifteen minutes");
+
+  m_files_open = addr(
+      root, "/files/open", ossia::val_type::INT,
+      "Open file handles machine-wide, 0 on Windows which does not report it");
+  m_files_max = addr(
+      root, "/files/max", ossia::val_type::INT, "Machine-wide limit on open files");
+  m_process_files_open = addr(
+      root, "/process/files/open", ossia::val_type::INT,
+      "File descriptors held by score; on Windows, every kernel handle it holds");
+  m_process_files_max = addr(
+      root, "/process/files/max", ossia::val_type::INT,
+      "Soft limit for this process, 0 where the platform imposes none");
+  m_process_files_usage
+      = ratio(root, "/process/files/usage", "Descriptors used against the limit, in [0; 1]");
 
   m_os_name = addr(root, "/os/name", ossia::val_type::STRING, "Operating system name");
   m_os_product = addr(
@@ -901,6 +924,16 @@ void tree::push_dynamic(const hardware& hw, const snapshot& snap)
   push(m_load_1, snap.load.one);
   push(m_load_5, snap.load.five);
   push(m_load_15, snap.load.fifteen);
+
+  push(m_files_open, count(snap.files.system_open));
+  push(m_files_max, count(snap.files.system_max));
+  push(m_process_files_open, count(snap.files.process_open));
+  push(m_process_files_max, count(snap.files.process_max));
+  push(
+      m_process_files_usage,
+      usage_of(snap.files.process_max, snap.files.process_max - std::min(
+                                           snap.files.process_max,
+                                           snap.files.process_open)));
 
   push(m_cpu_usage, snap.cpu_usage);
   push(m_cpu_thread_usage, floats(snap.thread_usage));

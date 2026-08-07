@@ -152,6 +152,7 @@ struct snapshot
   std::vector<platform::gpu_metrics> gpus;
 
   platform::load_average load;
+  platform::file_handles files;
   double uptime{};
 };
 
@@ -319,6 +320,12 @@ private:
   ossia::net::parameter_base* m_load_1{};
   ossia::net::parameter_base* m_load_5{};
   ossia::net::parameter_base* m_load_15{};
+
+  ossia::net::parameter_base* m_files_open{};
+  ossia::net::parameter_base* m_files_max{};
+  ossia::net::parameter_base* m_process_files_open{};
+  ossia::net::parameter_base* m_process_files_max{};
+  ossia::net::parameter_base* m_process_files_usage{};
 
   ossia::net::parameter_base* m_os_name{};
   ossia::net::parameter_base* m_os_product{};

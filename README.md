@@ -75,9 +75,22 @@ component the machine does not have.
 `/weekday` (1 is Monday), `/hour`, `/minute`, `/second`, `/unix`, `/utc_offset` (minutes)
 as ints, `/time/day_seconds` as a float, `/time/timezone` as a string. All **live**.
 
-### Load
+### Load and open files
 
 `/load/1m`, `/load/5m`, `/load/15m` — **live**. Zero on Windows, which has no equivalent.
+
+| Address                  | Type      |                                                   |
+|--------------------------|-----------|---------------------------------------------------|
+| `/files/open`            | int       | **live**, open handles machine-wide                |
+| `/files/max`             | int       | **live**, machine-wide limit                       |
+| `/process/files/open`    | int       | **live**, descriptors held by score                |
+| `/process/files/max`     | int       | **live**, soft limit for the process               |
+| `/process/files/usage`   | float 0-1 | **live**, against that limit                       |
+
+The machine-wide pair reads zero on Windows, which does not report it. On Windows the
+per-process count is every kernel handle score holds, not only files: there is no
+narrower equivalent. Counts are clamped to the 32-bit range, so an unlimited
+`fs.file-max` reads as `2147483647`.
 
 ### CPU
 
