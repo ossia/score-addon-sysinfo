@@ -92,8 +92,6 @@ target_include_directories(score_addon_sysinfo_hwinfo
 target_compile_definitions(score_addon_sysinfo_hwinfo PUBLIC HWINFO_STATIC)
 
 set_target_properties(score_addon_sysinfo_hwinfo PROPERTIES
-  CXX_STANDARD 17
-  CXX_STANDARD_REQUIRED ON
   POSITION_INDEPENDENT_CODE ON
 )
 
