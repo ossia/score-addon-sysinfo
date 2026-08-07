@@ -1,42 +1,112 @@
 # Vendored build of https://github.com/lfreist/hwinfo
 #
-# Options are set as normal variables: hwinfo declares them with option(), which
-# under CMP0077 (NEW since its own cmake_minimum_required(3.22)) honours an
-# existing variable instead of creating a cache entry. Doing it this way keeps
-# BUILD_TESTING and friends untouched for the rest of score.
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/hwinfo/CMakeLists.txt")
+# Its own CMakeLists is not used: it would build shared libraries by default,
+# add install rules for archives and headers into score's install tree, and
+# compile with -Werror on MSVC. The sources are compiled straight into an
+# object library instead, so the add-on ends up self-contained in a single
+# plug-in with nothing to deploy alongside it.
+set(HWINFO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/hwinfo")
+
+if(NOT EXISTS "${HWINFO_DIR}/CMakeLists.txt")
   message(WARNING "score-addon-sysinfo: 3rdparty/hwinfo is missing, run: git submodule update --init --recursive")
   return()
 endif()
 
-set(HWINFO_STATIC ON)
-set(HWINFO_SHARED OFF)
+# The PCI vendor / device database, which the Linux GPU backend maps ids through
+set(HWINFO_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/hwinfo-generated")
+set(HWINFO_PCI_IDS_HEADER "${HWINFO_GENERATED_DIR}/pci.ids.h")
 
-set(HWINFO_OS ON)
-set(HWINFO_MAINBOARD ON)
-set(HWINFO_CPU ON)
-set(HWINFO_DISK ON)
-set(HWINFO_RAM ON)
-set(HWINFO_GPU ON)
-set(HWINFO_BATTERY ON)
-set(HWINFO_NETWORK ON)
+add_custom_command(
+  OUTPUT "${HWINFO_PCI_IDS_HEADER}"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${HWINFO_GENERATED_DIR}"
+  COMMAND ${CMAKE_COMMAND}
+    -DINPUT=${HWINFO_DIR}/data/pci.ids
+    -DOUTPUT=${HWINFO_PCI_IDS_HEADER}
+    -DNAME=pci_ids
+    -P "${HWINFO_DIR}/data/embed.cmake"
+  DEPENDS "${HWINFO_DIR}/data/pci.ids" "${HWINFO_DIR}/data/embed.cmake"
+  COMMENT "score-addon-sysinfo: generating pci_ids header"
+  VERBATIM
+)
 
-# Would pull in an OpenCL SDK for a couple of extra GPU fields
-set(HWINFO_GPU_OPENCL OFF)
+# Every backend guards itself on HWINFO_UNIX / HWINFO_APPLE / HWINFO_WINDOWS,
+# so the ones that do not apply compile to nothing.
+add_library(score_addon_sysinfo_hwinfo OBJECT
+  "${HWINFO_PCI_IDS_HEADER}"
 
-set(BUILD_EXAMPLES OFF)
-set(BUILD_TESTING OFF)
+  "${HWINFO_DIR}/src/battery.cpp"
+  "${HWINFO_DIR}/src/cpu.cpp"
+  "${HWINFO_DIR}/src/disk.cpp"
+  "${HWINFO_DIR}/src/gpu.cpp"
+  "${HWINFO_DIR}/src/mainboard.cpp"
+  "${HWINFO_DIR}/src/network.cpp"
+  "${HWINFO_DIR}/src/os.cpp"
+  "${HWINFO_DIR}/src/ram.cpp"
+  "${HWINFO_DIR}/src/PCIMapper.cpp"
 
-# Keeps the generated pci.ids header out of the top of score's build folder
-set(HWINFO_CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}/hwinfo-build")
+  "${HWINFO_DIR}/src/apple/battery.cpp"
+  "${HWINFO_DIR}/src/apple/cpu.cpp"
+  "${HWINFO_DIR}/src/apple/disk.cpp"
+  "${HWINFO_DIR}/src/apple/gpu.cpp"
+  "${HWINFO_DIR}/src/apple/mainboard.cpp"
+  "${HWINFO_DIR}/src/apple/network.cpp"
+  "${HWINFO_DIR}/src/apple/os.cpp"
+  "${HWINFO_DIR}/src/apple/ram.cpp"
+  "${HWINFO_DIR}/src/apple/monitoring/cpu.cpp"
+  "${HWINFO_DIR}/src/apple/monitoring/disk.cpp"
+  "${HWINFO_DIR}/src/apple/monitoring/ram.cpp"
 
-block()
-  # hwinfo builds with -Wall -Wextra -Wpedantic, and /W4 /WX on MSVC
-  if(MSVC)
-    add_compile_options("/w")
-  else()
-    add_compile_options("-w")
-  endif()
+  "${HWINFO_DIR}/src/linux/battery.cpp"
+  "${HWINFO_DIR}/src/linux/cpu.cpp"
+  "${HWINFO_DIR}/src/linux/disk.cpp"
+  "${HWINFO_DIR}/src/linux/gpu.cpp"
+  "${HWINFO_DIR}/src/linux/mainboard.cpp"
+  "${HWINFO_DIR}/src/linux/network.cpp"
+  "${HWINFO_DIR}/src/linux/os.cpp"
+  "${HWINFO_DIR}/src/linux/ram.cpp"
+  "${HWINFO_DIR}/src/linux/monitoring/cpu.cpp"
+  "${HWINFO_DIR}/src/linux/monitoring/disk.cpp"
+  "${HWINFO_DIR}/src/linux/monitoring/ram.cpp"
 
-  add_subdirectory(3rdparty/hwinfo "${CMAKE_BINARY_DIR}/hwinfo-build" SYSTEM)
-endblock()
+  "${HWINFO_DIR}/src/windows/battery.cpp"
+  "${HWINFO_DIR}/src/windows/cpu.cpp"
+  "${HWINFO_DIR}/src/windows/disk.cpp"
+  "${HWINFO_DIR}/src/windows/gpu.cpp"
+  "${HWINFO_DIR}/src/windows/mainboard.cpp"
+  "${HWINFO_DIR}/src/windows/network.cpp"
+  "${HWINFO_DIR}/src/windows/os.cpp"
+  "${HWINFO_DIR}/src/windows/ram.cpp"
+  "${HWINFO_DIR}/src/windows/monitoring/cpu.cpp"
+  "${HWINFO_DIR}/src/windows/monitoring/disk.cpp"
+  "${HWINFO_DIR}/src/windows/monitoring/ram.cpp"
+  "${HWINFO_DIR}/src/windows/utils/wmi_wrapper.cpp"
+)
+
+target_include_directories(score_addon_sysinfo_hwinfo
+  SYSTEM PUBLIC
+    "${HWINFO_DIR}/include"
+    "${HWINFO_GENERATED_DIR}"
+)
+
+# HWINFO_API is a dllimport / dllexport attribute otherwise
+target_compile_definitions(score_addon_sysinfo_hwinfo PUBLIC HWINFO_STATIC)
+
+set_target_properties(score_addon_sysinfo_hwinfo PROPERTIES
+  CXX_STANDARD 17
+  CXX_STANDARD_REQUIRED ON
+  POSITION_INDEPENDENT_CODE ON
+)
+
+if(MSVC)
+  target_compile_options(score_addon_sysinfo_hwinfo PRIVATE "/w")
+else()
+  target_compile_options(score_addon_sysinfo_hwinfo PRIVATE "-w")
+endif()
+
+if(WIN32)
+  target_link_libraries(score_addon_sysinfo_hwinfo
+    PUBLIC ntdll powrprof dxgi setupapi wbemuuid ole32 oleaut32)
+elseif(APPLE)
+  target_link_libraries(score_addon_sysinfo_hwinfo
+    PUBLIC "-framework IOKit" "-framework CoreFoundation")
+endif()

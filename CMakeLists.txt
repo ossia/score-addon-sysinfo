@@ -12,7 +12,7 @@ project(score_addon_sysinfo LANGUAGES CXX)
 score_common_setup()
 
 include(hwinfo.cmake)
-if(NOT TARGET hwinfo)
+if(NOT TARGET score_addon_sysinfo_hwinfo)
   return()
 endif()
 
@@ -42,7 +42,7 @@ target_link_libraries(score_addon_sysinfo
   PUBLIC
     score_plugin_engine
   PRIVATE
-    lfreist-hwinfo::hwinfo
+    score_addon_sysinfo_hwinfo
 )
 
 if(WIN32)

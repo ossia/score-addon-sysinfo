@@ -11,6 +11,10 @@ authored on one machine keeps resolving on another.
 Built on [hwinfo](https://github.com/lfreist/hwinfo), vendored as a submodule, plus Qt
 and a small platform layer for what hwinfo does not cover.
 
+Everything is compiled into the plug-in itself: hwinfo goes in as an object library, and
+NVML is loaded at runtime only if the NVIDIA driver happens to be installed. There is
+nothing to deploy next to the `.so` / `.dll` / `.dylib`.
+
 ## Building
 
 ```bash
