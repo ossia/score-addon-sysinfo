@@ -1,0 +1,11 @@
+{
+  "src": "<url to the .zip file created by the release script>",
+  "name": "System info",
+  "raw_name": "score-addon-sysinfo",
+  "version": "1.0",
+  "kind": "addon",
+  "short": "Exposes the local machine's hardware as an ossia device",
+  "long": "Adds a 'System info' device which publishes CPU, GPU, memory, disk, battery, network, mainboard and OS information of the machine score runs on, under the same address tree on Linux, macOS and Windows. Static information is read when the device connects; load, free memory, free disk space and battery level are refreshed periodically.",
+  "small": "https://raw.githubusercontent.com/OSSIA/score-addon-tutorial/master/Deployment/icon.png",
+  "key": "362e9c51-a36d-469d-805d-b82b74ac5f3c"
+}

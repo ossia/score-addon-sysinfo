@@ -1,0 +1,3 @@
+[submodule "3rdparty/hwinfo"]
+	path = 3rdparty/hwinfo
+	url = https://github.com/lfreist/hwinfo
