@@ -93,6 +93,10 @@ target_compile_definitions(score_addon_sysinfo_hwinfo PUBLIC HWINFO_STATIC)
 
 set_target_properties(score_addon_sysinfo_hwinfo PROPERTIES
   POSITION_INDEPENDENT_CODE ON
+  # hwinfo defines a file-local struct Jiffies in both src/linux/cpu.cpp and
+  # src/linux/monitoring/cpu.cpp, each with its own get_jiffies(). Legal apart,
+  # ambiguous once score's unity build puts them in one translation unit.
+  UNITY_BUILD OFF
 )
 
 if(MSVC)
