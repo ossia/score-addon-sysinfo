@@ -25,9 +25,13 @@ ProtocolSettingsWidget::ProtocolSettingsWidget(QWidget* parent)
   m_deviceNameEdit->setText("sysinfo");
 
   m_rate = new QSpinBox{this};
-  m_rate->setRange(50, 600000);
+  m_rate->setRange(0, SpecificSettings::max_rate);
   m_rate->setSingleStep(100);
   m_rate->setSuffix(tr(" ms"));
+  m_rate->setSpecialValueText(tr("Paused"));
+  m_rate->setToolTip(
+      tr("Can also be changed while the device is connected, by writing to its "
+         "/rate address. Zero stops refreshing."));
   m_rate->setValue(SpecificSettings{}.rate);
 
   m_perThreadCpu = new QCheckBox{this};

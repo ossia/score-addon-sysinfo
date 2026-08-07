@@ -363,6 +363,21 @@ snapshot sampler::fetch(const hardware& hw, std::chrono::milliseconds cpu_window
 void tree::setup(
     ossia::net::node_base& root, const hardware& hw, const SpecificSettings& set)
 {
+  {
+    auto& n = ossia::net::create_node(root, "/rate");
+    m_rate = n.create_parameter(ossia::val_type::INT);
+    if(m_rate)
+    {
+      m_rate->set_access(ossia::access_mode::BI);
+      m_rate->set_domain(ossia::make_domain(0, SpecificSettings::max_rate));
+      ossia::net::set_description(
+          n, "Milliseconds between refreshes; 0 stops refreshing altogether");
+      // The protocol attaches its callback after this, so this does not
+      // re-enter it
+      m_rate->push_value(set.rate);
+    }
+  }
+
   m_hostname
       = addr(root, "/hostname", ossia::val_type::STRING, "Network name of the machine");
   m_uptime

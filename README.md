@@ -32,8 +32,13 @@ cmake --build build
 
 | Setting          | Default | Meaning                                                            |
 |------------------|---------|--------------------------------------------------------------------|
-| Refresh rate     | 1000 ms | How often the changing values are re-read                          |
+| Refresh rate     | 1000 ms | How often the changing values are re-read; 0 starts paused         |
 | Per-thread CPU   | on      | Whether to expose `/cpu/thread/usage` and `/cpu/thread/frequency`   |
+
+`/rate` is the one writable address in the tree, so the refresh interval can also be
+changed while the device is connected — from the device explorer, or automated from a
+score. Writing 0 stops refreshing entirely: the worker thread is joined and nothing is
+polled or pushed until a non-zero rate is written back.
 
 The hardware description is read once, when the device connects. The readings that block —
 CPU load is a delta measured over a sampling window, free space on a network mount can
@@ -54,6 +59,7 @@ component the machine does not have.
 
 | Address              | Type   |                                              |
 |----------------------|--------|----------------------------------------------|
+| `/rate`              | int    | **writable** — refresh interval in ms, 0 pauses |
 | `/hostname`          | string |                                              |
 | `/uptime`            | float  | **live**, seconds since boot                 |
 | `/os/name`           | string |                                              |

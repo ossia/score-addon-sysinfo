@@ -189,6 +189,9 @@ public:
   void push_dynamic(const hardware& hw, const snapshot& snap);
   void push_time();
 
+  //! The one settable node: milliseconds between refreshes, 0 to stop
+  ossia::net::parameter_base* rate_parameter() const noexcept { return m_rate; }
+
 private:
   struct cpu_params
   {
@@ -312,6 +315,7 @@ private:
     ossia::net::parameter_base* utc_offset{};
   };
 
+  ossia::net::parameter_base* m_rate{};
   ossia::net::parameter_base* m_hostname{};
   ossia::net::parameter_base* m_uptime{};
 

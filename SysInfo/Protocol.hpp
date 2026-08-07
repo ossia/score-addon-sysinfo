@@ -34,7 +34,13 @@ private:
   bool observe(ossia::net::parameter_base&, bool) override;
   bool update(ossia::net::node_base&) override;
 
+  //! The device stops the protocol before it tears the tree down
+  void stop() override;
+
   void tick();
+
+  //! Network-context thread only
+  void apply_rate(int ms);
 
   ossia::net::network_context_ptr m_context;
   SpecificSettings m_settings;
@@ -49,6 +55,14 @@ private:
   std::mutex m_mutex;
   snapshot m_snapshot;
   bool m_dirty{};
+
+  /**
+   * Written from wherever /rate is set - the device explorer, or a score
+   * automating it - and picked up by the next tick, so that no thread but the
+   * network context ever starts or joins the worker.
+   */
+  std::atomic<int> m_requested_rate{};
+  int m_active_rate{};
 
   std::unique_ptr<hwinfo::monitoring::Monitor<snapshot>> m_monitor;
 };

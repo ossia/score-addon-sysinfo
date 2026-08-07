@@ -5,8 +5,11 @@ namespace SysInfo
 {
 struct SpecificSettings
 {
+  //! Milliseconds between refreshes; 0 turns refreshing off
   int rate{1000};
   bool perThreadCpu{true};
+
+  static constexpr int max_rate = 3600000;
 };
 }
 
