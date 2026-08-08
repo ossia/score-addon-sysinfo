@@ -91,12 +91,37 @@ target_include_directories(score_addon_sysinfo_hwinfo
 # HWINFO_API is a dllimport / dllexport attribute otherwise
 target_compile_definitions(score_addon_sysinfo_hwinfo PUBLIC HWINFO_STATIC)
 
+# HWINFO_STATIC only blanks HWINFO_API on Windows; everywhere else the macro is
+# __attribute__((visibility("default"))), which overrides score's
+# -fvisibility=hidden and would put ~110 hwinfo:: symbols in the plug-in's
+# dynamic symbol table. platform.h is #pragma once, so including it up front and
+# blanking the macro afterwards leaves nothing exported. Applied to consumers
+# too, so that the class definitions carry the same attribute in every
+# translation unit.
+if(NOT WIN32)
+  set(HWINFO_VISIBILITY_SHIM "${CMAKE_CURRENT_BINARY_DIR}/hwinfo_visibility.h")
+  file(CONFIGURE OUTPUT "${HWINFO_VISIBILITY_SHIM}" CONTENT [[
+#pragma once
+#include <hwinfo/platform.h>
+#undef HWINFO_API
+#define HWINFO_API
+]])
+  target_compile_options(score_addon_sysinfo_hwinfo
+    PUBLIC "SHELL:-include ${HWINFO_VISIBILITY_SHIM}")
+endif()
+
 set_target_properties(score_addon_sysinfo_hwinfo PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   # hwinfo defines a file-local struct Jiffies in both src/linux/cpu.cpp and
   # src/linux/monitoring/cpu.cpp, each with its own get_jiffies(). Legal apart,
   # ambiguous once score's unity build puts them in one translation unit.
   UNITY_BUILD OFF
+
+  # setup_score_plugin() only applies these to the plug-in target, and this
+  # object library never goes through it
+  C_VISIBILITY_PRESET hidden
+  CXX_VISIBILITY_PRESET hidden
+  VISIBILITY_INLINES_HIDDEN ON
 )
 
 if(MSVC)
