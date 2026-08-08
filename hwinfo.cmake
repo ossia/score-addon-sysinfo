@@ -98,6 +98,24 @@ set_source_files_properties(
   TARGET_DIRECTORY score_addon_sysinfo_hwinfo
   PROPERTIES COMPILE_DEFINITIONS "getVendor=getBatteryVendor")
 
+if(APPLE)
+  # src/apple/cpu.cpp's HWINFO_X86 branch calls cpuid::cpuid(), and no such
+  # namespace exists anywhere in hwinfo - the file simply does not compile on an
+  # Intel Mac. Its own fallback reads machdep.cpu.vendor and
+  # machdep.cpu.brand_string, which are the Intel sysctls, so that branch is the
+  # right one there anyway.
+  set(HWINFO_APPLE_CPU_SHIM "${CMAKE_CURRENT_BINARY_DIR}/hwinfo_apple_cpu.h")
+  file(CONFIGURE OUTPUT "${HWINFO_APPLE_CPU_SHIM}" CONTENT [[
+#pragma once
+#include <hwinfo/platform.h>
+#undef HWINFO_X86
+]])
+  set_source_files_properties(
+    "${HWINFO_DIR}/src/apple/cpu.cpp"
+    TARGET_DIRECTORY score_addon_sysinfo_hwinfo
+    PROPERTIES COMPILE_OPTIONS "SHELL:-include ${HWINFO_APPLE_CPU_SHIM}")
+endif()
+
 # HWINFO_API is a dllimport / dllexport attribute otherwise
 target_compile_definitions(score_addon_sysinfo_hwinfo PUBLIC HWINFO_STATIC)
 
