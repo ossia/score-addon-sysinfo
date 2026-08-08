@@ -605,7 +605,7 @@ void tree::setup(
     p.size = addr(
         root, idx("/disk/", i, "/size"), ossia::val_type::FLOAT,
         "Capacity of the device itself, in bytes");
-    p.interface = addr(
+    p.bus = addr(
         root, idx("/disk/", i, "/interface"), ossia::val_type::STRING,
         "Bus the disk is attached to");
     p.mountpoints = addr(
@@ -851,7 +851,7 @@ void tree::push_static(const hardware& hw)
     push(p.model, d.model());
     push(p.serial, d.serial_number());
     push(p.size, quantity(d.size()));
-    push(p.interface, std::string(to_string(d.disk_interface())));
+    push(p.bus, std::string(to_string(d.disk_interface())));
 
     std::vector<std::string> paths;
     for(const auto& m : hw.mounts)

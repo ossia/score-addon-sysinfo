@@ -241,7 +241,8 @@ private:
     ossia::net::parameter_base* model{};
     ossia::net::parameter_base* serial{};
     ossia::net::parameter_base* size{};
-    ossia::net::parameter_base* interface{};
+    //! Not named `interface`: that is a macro in Windows' rpc.h
+    ossia::net::parameter_base* bus{};
     ossia::net::parameter_base* mountpoints{};
     ossia::net::parameter_base* total{};
     ossia::net::parameter_base* free{};

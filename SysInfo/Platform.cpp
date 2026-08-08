@@ -21,9 +21,16 @@
 #if !defined(NOMINMAX)
 #define NOMINMAX
 #endif
+// GetIfTable2 and MIB_IF_TABLE2 are Vista-era; mingw defaults below that and
+// score sets no version of its own
+#if !defined(_WIN32_WINNT) || _WIN32_WINNT < 0x0600
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif
 #include <windows.h>
 // clang-format off
 #include <iphlpapi.h>
+#include <netioapi.h>
 // clang-format on
 #else
 #include <sys/resource.h>

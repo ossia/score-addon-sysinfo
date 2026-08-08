@@ -38,6 +38,13 @@ add_library(score_addon_sysinfo
 
 target_include_directories(score_addon_sysinfo PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
+# Platform.cpp is the only file that pulls in <windows.h>. Merged into a unity
+# translation unit its macros (interface, uuid_t, ...) leak into every file
+# after it and break score's own headers.
+set_source_files_properties(
+  "${CMAKE_CURRENT_SOURCE_DIR}/SysInfo/Platform.cpp"
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 target_link_libraries(score_addon_sysinfo
   PUBLIC
     score_plugin_engine
