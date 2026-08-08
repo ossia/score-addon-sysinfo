@@ -88,6 +88,16 @@ target_include_directories(score_addon_sysinfo_hwinfo
     "${HWINFO_GENERATED_DIR}"
 )
 
+# hwinfo defines hwinfo::getVendor() at external linkage in both
+# src/apple/battery.cpp and src/apple/cpu.cpp. Upstream never links them into
+# the same image - it builds one shared library per component - but this add-on
+# is a single plug-in, so they collide. Both the definition and its only call
+# site live in that one file, so renaming it there is enough.
+set_source_files_properties(
+  "${HWINFO_DIR}/src/apple/battery.cpp"
+  TARGET_DIRECTORY score_addon_sysinfo_hwinfo
+  PROPERTIES COMPILE_DEFINITIONS "getVendor=getBatteryVendor")
+
 # HWINFO_API is a dllimport / dllexport attribute otherwise
 target_compile_definitions(score_addon_sysinfo_hwinfo PUBLIC HWINFO_STATIC)
 
