@@ -1,17 +1,18 @@
-// Before every include: <windows.h> arrives through dylib_loader.hpp, and
-// GetIfTable2 / MIB_IF_TABLE2 are only declared if the target version is set
-// first. score defines none, and mingw defaults below Vista.
 #if defined(_WIN32)
-#if !defined(_WIN32_WINNT) || _WIN32_WINNT < 0x0600
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
-#endif
 #if !defined(WIN32_LEAN_AND_MEAN)
 #define WIN32_LEAN_AND_MEAN
 #endif
 #if !defined(NOMINMAX)
 #define NOMINMAX
 #endif
+// Before everything else: netioapi.h only declares MIB_IF_TABLE2 and
+// GetIfTable2 once the winsock2 address types are in scope, and winsock2.h has
+// to come before windows.h - which arrives below through dylib_loader.hpp.
+#include <winsock2.h>
+#include <ws2ipdef.h>
+#include <windows.h>
+#include <iphlpapi.h>
+#include <netioapi.h>
 #endif
 
 #include "Platform.hpp"
@@ -30,13 +31,7 @@
 #include <stdexcept>
 #include <string_view>
 
-#if defined(_WIN32)
-#include <windows.h>
-// clang-format off
-#include <iphlpapi.h>
-#include <netioapi.h>
-// clang-format on
-#else
+#if !defined(_WIN32)
 #include <sys/resource.h>
 #include <sys/statvfs.h>
 #include <unistd.h>
