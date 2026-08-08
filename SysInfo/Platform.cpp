@@ -1,3 +1,19 @@
+// Before every include: <windows.h> arrives through dylib_loader.hpp, and
+// GetIfTable2 / MIB_IF_TABLE2 are only declared if the target version is set
+// first. score defines none, and mingw defaults below Vista.
+#if defined(_WIN32)
+#if !defined(_WIN32_WINNT) || _WIN32_WINNT < 0x0600
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif
+#if !defined(WIN32_LEAN_AND_MEAN)
+#define WIN32_LEAN_AND_MEAN
+#endif
+#if !defined(NOMINMAX)
+#define NOMINMAX
+#endif
+#endif
+
 #include "Platform.hpp"
 
 #include <ossia/detail/dylib_loader.hpp>
@@ -15,18 +31,6 @@
 #include <string_view>
 
 #if defined(_WIN32)
-#if !defined(WIN32_LEAN_AND_MEAN)
-#define WIN32_LEAN_AND_MEAN
-#endif
-#if !defined(NOMINMAX)
-#define NOMINMAX
-#endif
-// GetIfTable2 and MIB_IF_TABLE2 are Vista-era; mingw defaults below that and
-// score sets no version of its own
-#if !defined(_WIN32_WINNT) || _WIN32_WINNT < 0x0600
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
-#endif
 #include <windows.h>
 // clang-format off
 #include <iphlpapi.h>

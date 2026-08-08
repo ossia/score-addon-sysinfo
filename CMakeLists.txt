@@ -38,12 +38,11 @@ add_library(score_addon_sysinfo
 
 target_include_directories(score_addon_sysinfo PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# Platform.cpp is the only file that pulls in <windows.h>. Merged into a unity
-# translation unit its macros (interface, uuid_t, ...) leak into every file
-# after it and break score's own headers.
-set_source_files_properties(
-  "${CMAKE_CURRENT_SOURCE_DIR}/SysInfo/Platform.cpp"
-  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+# On Windows <windows.h> reaches most of these files - through
+# ossia/detail/dylib_loader.hpp, boost::asio, and hwinfo/cpu.h which includes
+# wmi_wrapper.h. Merged into one translation unit its macros leak forward:
+# uuid_t becomes UUID and breaks score::uuid_t in InterfaceList.hpp.
+set_target_properties(score_addon_sysinfo PROPERTIES UNITY_BUILD OFF)
 
 target_link_libraries(score_addon_sysinfo
   PUBLIC
