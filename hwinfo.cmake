@@ -113,7 +113,7 @@ if(APPLE)
   set_source_files_properties(
     "${HWINFO_DIR}/src/apple/cpu.cpp"
     TARGET_DIRECTORY score_addon_sysinfo_hwinfo
-    PROPERTIES COMPILE_OPTIONS "SHELL:-include ${HWINFO_APPLE_CPU_SHIM}")
+    PROPERTIES COMPILE_OPTIONS "-include;${HWINFO_APPLE_CPU_SHIM}")
 endif()
 
 # HWINFO_API is a dllimport / dllexport attribute otherwise
