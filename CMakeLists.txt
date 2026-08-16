@@ -11,6 +11,18 @@ endif()
 project(score_addon_sysinfo LANGUAGES CXX)
 score_common_setup()
 
+# hwinfo has three backends - apple, windows, and one it calls "unix" that is
+# in fact Linux-only: it reads /proc and /sys throughout, and its network and
+# ram files need <netpacket/packet.h> and _SC_AVPHYS_PAGES, neither of which
+# exists on the BSDs. But its platform.h keys that backend off __unix__, so
+# FreeBSD picks it and this add-on is the one thing that stops score from
+# compiling there. A real BSD backend belongs upstream in lfreist/hwinfo rather
+# than in a shim here, so until it exists leave the add-on out of the build.
+if(CMAKE_SYSTEM_NAME MATCHES "BSD|DragonFly")
+  message(STATUS "score-addon-sysinfo: hwinfo has no ${CMAKE_SYSTEM_NAME} backend, skipping")
+  return()
+endif()
+
 include(hwinfo.cmake)
 if(NOT TARGET score_addon_sysinfo_hwinfo)
   return()
