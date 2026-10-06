@@ -68,4 +68,8 @@ if(WIN32)
   target_link_libraries(score_addon_sysinfo PRIVATE iphlpapi)
 endif()
 
+if(COMMAND score_register_license)
+  score_register_license(hwinfo URL "https://github.com/lfreist/hwinfo" FILES "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/hwinfo/LICENSE")
+endif()
+
 setup_score_plugin(score_addon_sysinfo)
